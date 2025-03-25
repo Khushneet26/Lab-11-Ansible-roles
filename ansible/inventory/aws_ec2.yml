@@ -1,25 +1,65 @@
-plugin: amazon.aws.aws_ec2
-regions:
-  - us-west-2
-# Set individual Variables
-compose:
-  ansible_host: public_dns_name
-# Set the Inventory Hostname to be the EC2 Tag Name value without any prefix or separator
-hostnames:
-  - name: tag:Name
-    separator: ""
-    prefix: ""
-# Create groups
-keyed_groups:
-  # Create a group for each Name Tag (alternative to setting the hostname above)
-  - key: tags.group
-    prefix: "group"
-    separator: "_"
-  # Create group for each separate Project Tag
-  - key: tags.Project
-    prefix: "project"
-    separator: "_"
-  # Create a group for each separate Role Tag
-  - key: tags.Role
-    prefix: "server_role"
-    separator: "_"
+---
+- name: Configure Frontend Server
+  hosts: frontend
+  become: yes
+  roles:
+    - frontend
+
+- name: Configure Backend Server
+  hosts: backend
+  become: yes
+  roles:
+    - backend
+
+# Frontend Role
+frontend/
+  tasks/main.yml:
+  ---
+  - name: Install Nginx
+    apt:
+      name: nginx
+      state: present
+    notify: Restart Nginx
+
+  - name: Deploy HTML file
+    copy:
+      src: index.html
+      dest: /var/www/html/index.html
+      owner: www-data
+      group: www-data
+      mode: '0644'
+    notify: Restart Nginx
+
+  handlers/main.yml:
+  ---
+  - name: Restart Nginx
+    service:
+      name: nginx
+      state: restarted
+
+# Backend Role
+backend/
+  tasks/main.yml:
+  ---
+  - name: Install Apache
+    yum:
+      name: httpd
+      state: present
+    notify: Restart Apache
+
+  - name: Deploy Web Content
+    copy:
+      src: index.html
+      dest: /var/www/html/index.html
+      owner: apache
+      group: apache
+      mode: '0644'
+    notify: Restart Apache
+
+  handlers/main.yml:
+  ---
+  - name: Restart Apache
+    service:
+      name: httpd
+      state: restarted
+

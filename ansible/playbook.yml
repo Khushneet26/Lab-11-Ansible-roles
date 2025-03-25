@@ -1,4 +1,4 @@
-- name: Setup Redis and Frontend Servers
+ name: Setup Redis and Frontend Servers
   hosts:
     - server_role_redis_server
     - server_role_frontend_server
